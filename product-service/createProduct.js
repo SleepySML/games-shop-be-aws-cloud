@@ -2,26 +2,25 @@
 const AWS = require('aws-sdk');
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
-module.exports.getProductsById = async (event) => {
-    const paramsProducts = {
+module.exports.createProduct = async (event, context) => {
+    const body = JSON.parse(event.body);
+    const params = {
         TableName: process.env.DYNAMODB_TABLE_PRODUCTS,
-        Key: {
-            id: event.pathParameters.productId,
-        },
+        Item: {
+            id: body.id,
+            title: body.title,
+            description: body.description,
+            price: body.price,
+        }
     };
 
     try {
-        const data = await dynamodb.get(paramsProducts).promise();
-        const item = data.Item;
+        await dynamodb.put(params).promise();
 
-        return item ? {
+        return {
             statusCode: 200,
-            body: JSON.stringify(item),
-        } : {
-            statusCode: 404,
-            body: JSON.stringify({ message: 'Product not found' }),
+            body: JSON.stringify({ message: "Product created successfully" }),
         };
-
     } catch (error) {
         return {
             statusCode: 500,

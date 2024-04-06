@@ -1,51 +1,32 @@
 'use strict';
+const AWS = require('aws-sdk');
+const dynamodb = new AWS.DynamoDB.DocumentClient();
 
 module.exports.getProductsList = async () => {
-    const products = [
-        {
-            description: "Short Product Description1",
-            id: "7567ec4b-b10c-48c5-9345-fc73c48a80aa",
-            price: 24,
-            title: "ProductOne",
-        },
-        {
-            description: "Short Product Description7",
-            id: "7567ec4b-b10c-48c5-9345-fc73c48a80a1",
-            price: 15,
-            title: "ProductTitle",
-        },
-        {
-            description: "Short Product Description2",
-            id: "7567ec4b-b10c-48c5-9345-fc73c48a80a3",
-            price: 23,
-            title: "Product",
-        },
-        {
-            description: "Short Product Description4",
-            id: "7567ec4b-b10c-48c5-9345-fc73348a80a1",
-            price: 15,
-            title: "ProductTest",
-        },
-        {
-            description: "Short Product Descriptio1",
-            id: "7567ec4b-b10c-48c5-9445-fc73c48a80a2",
-            price: 23,
-            title: "Product2",
-        },
-        {
-            description: "Short Product Description7",
-            id: "7567ec4b-b10c-45c5-9345-fc73c48a80a1",
-            price: 15,
-            title: "ProductName",
-        },
-    ]
+
+    const paramsProducts = {
+        TableName: process.env.DYNAMODB_TABLE_PRODUCTS,
+    };
+
+    const paramsStock = {
+        TableName: process.env.DYNAMODB_TABLE_STOCKS,
+    };
 
     try {
+        const productsData = await dynamodb.scan(paramsProducts).promise();
+        const stocksData = await dynamodb.scan(paramsStock).promise();
+
+        // join products and stocks
+        const productList = productsData.Items.map(item => {
+            let stockItem = stocksData.Items.find(stock => stock.product_id === item.id);
+            return { ...item, count: stockItem ? stockItem.count : 0};
+        });
+
         return {
             statusCode: 200,
-            body: JSON.stringify(products),
+            body: JSON.stringify(productList),
         };
-    } catch (e) {
+    } catch (error) {
         return {
             statusCode: 500,
             body: JSON.stringify({
