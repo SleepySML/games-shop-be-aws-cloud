@@ -22,12 +22,29 @@ frameworkVersion: "3"
 
 provider:
   name: aws
-  runtime: nodejs20.x
+  runtime: nodejs16.x
   stage: dev
   region: eu-west-1
   profile: default
+  environment:
+    DYNAMODB_TABLE_PRODUCTS: products
+    DYNAMODB_TABLE_STOCKS: stocks
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - dynamodb:Scan
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+      Resource:
+        - 'arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/${self:provider.environment.DYNAMODB_TABLE_PRODUCTS}'
+        - 'arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/${self:provider.environment.DYNAMODB_TABLE_STOCKS}'
   httpApi:
     cors: true
+custom:
+  webpack:
+    includeModules:
+      forceExclude:
+        - aws-sdk
 
 # you can add statements to the Lambda function's IAM Role here
 #  iam:
@@ -60,6 +77,12 @@ provider:
 #    - include-me-dir/**
 
 functions:
+  createProduct:
+    handler: createProduct.createProduct
+    events:
+      - http:
+          path: /products
+          method: POST
   getProductsList:
     handler: getProductsList.getProductsList
     events:
