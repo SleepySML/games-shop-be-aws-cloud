@@ -1,0 +1,49 @@
+service: import-service
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  stage: dev
+  region: eu-west-1
+  profile: default
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action: "s3:ListBucket"
+      Resource:
+        - "arn:aws:s3:::games-shop-aws-learning-uploads"
+    - Effect: 'Allow'
+      Action:
+        - "s3:*"
+      Resource:
+        - "arn:aws:s3:::games-shop-aws-learning-uploads/*"
+  httpApi:
+    cors: true
+custom:
+  webpack:
+    includeModules:
+      forceExclude:
+        - aws-sdk
+
+functions:
+  importProductsFile:
+    handler: importProductsFile.importProductsFile
+    events:
+      - http:
+          method: get
+          path: /import
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                name: true
+  importFileParser:
+    handler: importFileParser.importFileParser
+    events:
+      - s3:
+          existing: true
+          bucket: games-shop-aws-learning-uploads
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: uploaded/
+            - suffix: .csv
