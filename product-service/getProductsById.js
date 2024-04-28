@@ -16,15 +16,18 @@ module.exports.getProductsById = async (event) => {
 
         return item ? {
             statusCode: 200,
+            headers: { 'Access-Control-Allow-Origin': '*' },
             body: JSON.stringify(item),
         } : {
             statusCode: 404,
+            headers: { 'Access-Control-Allow-Origin': '*' },
             body: JSON.stringify({ message: 'Product not found' }),
         };
 
     } catch (error) {
         return {
             statusCode: 500,
+            headers: { 'Access-Control-Allow-Origin': '*' },
             body: JSON.stringify({
                 message: "Internal Server Error",
                 error: error.message,

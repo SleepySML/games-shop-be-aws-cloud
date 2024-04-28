@@ -24,11 +24,13 @@ module.exports.getProductsList = async () => {
 
         return {
             statusCode: 200,
+            headers: { 'Access-Control-Allow-Origin': '*' },
             body: JSON.stringify(productList),
         };
     } catch (error) {
         return {
             statusCode: 500,
+            headers: { 'Access-Control-Allow-Origin': '*' },
             body: JSON.stringify({
                 message: "Internal Server Error",
                 error: error.message,
