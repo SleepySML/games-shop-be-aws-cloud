@@ -1,0 +1,23 @@
+service: authorization-service
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  region: eu-west-1
+  profile: default
+  httpApi:
+    cors: true
+plugins:
+  - serverless-dotenv-plugin
+custom:
+  webpack:
+    includeModules:
+      forceExclude:
+        - aws-sdk
+
+functions:
+  basicAuthorizer:
+    handler: basicAuthorizer.basicAuthorizer
+    environment:
+      USERNAME: ${env:username}

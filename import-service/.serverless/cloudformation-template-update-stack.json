@@ -154,6 +154,20 @@
                     "s3:*"
                   ],
                   "Resource": "arn:aws:s3:::games-shop-aws-learning-uploads/*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:*"
+                  ],
+                  "Resource": "arn:aws:sqs:eu-west-1:216263405757:catalogItemsQueue"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sns:Publish"
+                  ],
+                  "Resource": "arn:aws:sns:eu-west-1:216263405757:createProductTopic"
                 }
               ]
             }
@@ -182,7 +196,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/import-service/dev/1714317667063-2024-04-28T15:21:07.063Z/import-service.zip"
+          "S3Key": "serverless/import-service/dev/1715169400242-2024-05-08T11:56:40.242Z/import-service.zip"
         },
         "Handler": "importProductsFile.importProductsFile",
         "Runtime": "nodejs16.x",
@@ -207,7 +221,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/import-service/dev/1714317667063-2024-04-28T15:21:07.063Z/import-service.zip"
+          "S3Key": "serverless/import-service/dev/1715169400242-2024-05-08T11:56:40.242Z/import-service.zip"
         },
         "Handler": "importFileParser.importFileParser",
         "Runtime": "nodejs16.x",
@@ -225,24 +239,24 @@
         "ImportFileParserLogGroup"
       ]
     },
-    "ImportProductsFileLambdaVersionkgWYAP41iKww7kMUCMidQYhagO642UqnTTSvnEYy4": {
+    "ImportProductsFileLambdaVersioni9KH84j4FSymVrgPWJmJKByPkh6nvC6024QK8CWaWD0": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ImportProductsFileLambdaFunction"
         },
-        "CodeSha256": "KJlq3aqDYau7ag20s27nKAeqU4IK3ZIas9f7lz1ToI0="
+        "CodeSha256": "W6Ec3uTqzXajdW7uePKwvI5OPRPbMK3PjDTE5n7K3Kc="
       }
     },
-    "ImportFileParserLambdaVersionFtyG7TvV5wJi5PwTieJuERSuVKY2T19aiID4fcqQ": {
+    "ImportFileParserLambdaVersionZycIfvUfqY1sUtskaPi3L6erelfdXknsV1br5luI": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ImportFileParserLambdaFunction"
         },
-        "CodeSha256": "KJlq3aqDYau7ag20s27nKAeqU4IK3ZIas9f7lz1ToI0="
+        "CodeSha256": "W6Ec3uTqzXajdW7uePKwvI5OPRPbMK3PjDTE5n7K3Kc="
       }
     },
     "ImportFileParserCustomS31": {
@@ -372,7 +386,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/import-service/dev/1714317667063-2024-04-28T15:21:07.063Z/custom-resources.zip"
+          "S3Key": "serverless/import-service/dev/1715169400242-2024-05-08T11:56:40.242Z/custom-resources.zip"
         },
         "FunctionName": "import-service-dev-custom-resource-existing-s3",
         "Handler": "s3/handler.handler",
@@ -476,7 +490,10 @@
           "Ref": "ApiGatewayRestApi"
         },
         "ApiKeyRequired": false,
-        "AuthorizationType": "NONE",
+        "AuthorizationType": "CUSTOM",
+        "AuthorizerId": {
+          "Ref": "BasicAuthorizerApiGatewayAuthorizer"
+        },
         "Integration": {
           "IntegrationHttpMethod": "POST",
           "Type": "AWS_PROXY",
@@ -510,7 +527,7 @@
         }
       },
       "DependsOn": [
-        "ImportProductsFileLambdaPermissionApiGateway"
+        "BasicAuthorizerApiGatewayAuthorizer"
       ]
     },
     "ApiGatewayImportserviceRequestValidator": {
@@ -524,7 +541,37 @@
         "Name": "import-service-dev | Validate request body and querystring parameters"
       }
     },
-    "ApiGatewayDeployment1714317666059": {
+    "BasicAuthorizerApiGatewayAuthorizer": {
+      "Type": "AWS::ApiGateway::Authorizer",
+      "Properties": {
+        "AuthorizerResultTtlInSeconds": 0,
+        "IdentitySource": "method.request.header.Authorization",
+        "Name": "basicAuthorizer",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "AuthorizerUri": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":apigateway:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":lambda:path/2015-03-31/functions/",
+              "arn:aws:lambda:eu-west-1:216263405757:function:authorization-service-dev-basicAuthorizer",
+              "/invocations"
+            ]
+          ]
+        },
+        "Type": "TOKEN"
+      }
+    },
+    "ApiGatewayDeployment1715169397608": {
       "Type": "AWS::ApiGateway::Deployment",
       "Properties": {
         "RestApiId": {
@@ -573,6 +620,38 @@
           ]
         }
       }
+    },
+    "BasicAuthorizerLambdaPermissionApiGateway": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": "arn:aws:lambda:eu-west-1:216263405757:function:authorization-service-dev-basicAuthorizer",
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      }
     }
   },
   "Outputs": {
@@ -587,7 +666,7 @@
     "ImportProductsFileLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ImportProductsFileLambdaVersionkgWYAP41iKww7kMUCMidQYhagO642UqnTTSvnEYy4"
+        "Ref": "ImportProductsFileLambdaVersioni9KH84j4FSymVrgPWJmJKByPkh6nvC6024QK8CWaWD0"
       },
       "Export": {
         "Name": "sls-import-service-dev-ImportProductsFileLambdaFunctionQualifiedArn"
@@ -596,7 +675,7 @@
     "ImportFileParserLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ImportFileParserLambdaVersionFtyG7TvV5wJi5PwTieJuERSuVKY2T19aiID4fcqQ"
+        "Ref": "ImportFileParserLambdaVersionZycIfvUfqY1sUtskaPi3L6erelfdXknsV1br5luI"
       },
       "Export": {
         "Name": "sls-import-service-dev-ImportFileParserLambdaFunctionQualifiedArn"

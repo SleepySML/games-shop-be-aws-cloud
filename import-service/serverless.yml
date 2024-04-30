@@ -17,6 +17,14 @@ provider:
         - "s3:*"
       Resource:
         - "arn:aws:s3:::games-shop-aws-learning-uploads/*"
+    - Effect: 'Allow'
+      Action:
+        - 'sqs:*'
+      Resource: "arn:aws:sqs:eu-west-1:216263405757:catalogItemsQueue"
+    - Effect: 'Allow'
+      Action:
+        - 'sns:Publish'
+      Resource: 'arn:aws:sns:eu-west-1:216263405757:createProductTopic'
   httpApi:
     cors: true
 custom:
@@ -33,6 +41,12 @@ functions:
           method: get
           path: /import
           cors: true
+          authorizer:
+            name: basicAuthorizer
+            arn: arn:aws:lambda:${self:provider.region}:${aws:accountId}:function:authorization-service-dev-basicAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: TOKEN
           request:
             parameters:
               querystrings:
@@ -44,6 +58,10 @@ functions:
           existing: true
           bucket: games-shop-aws-learning-uploads
           event: s3:ObjectCreated:*
+          events:
+            - sns:
+                arn: "arn:aws:sns:eu-west-1:216263405757:createProductTopic"
+                topicName: createProductTopic
           rules:
             - prefix: uploaded/
             - suffix: .csv

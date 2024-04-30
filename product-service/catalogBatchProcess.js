@@ -1,28 +1,36 @@
 'use strict';
 const AWS = require('aws-sdk');
+const uuid = require('uuid');
 
 module.exports.catalogBatchProcess = async (event) => {
     const docClient = new AWS.DynamoDB.DocumentClient();
     const sns = new AWS.SNS();
-    const topicData = await sns.createTopic({ Name: 'createProductTopic' }).promise();
     const records = event.Records;
+
+    console.log('records:', records);
 
     try {
         await Promise.all(records.map(async record => {
-            const item = JSON.parse(record.body);
-            const params = {
-                TableName: 'products',
-                Item: item
-            };
+            const items = JSON.parse(record.body);
+            const itemTittles = items.map(item => item.title).join(', ');
+
             try {
-                await docClient.put(params).promise();
-                console.log(`The product "${item.title}" was inserted.`);
+                for await (const item of items) {
+                    const itemWithId = {
+                        ...item,
+                        id: uuid.v4()
+                    }
+                    const params = {
+                        TableName: 'products',
+                        Item: itemWithId
+                    };
+                    await docClient.put(params).promise();
+                }
 
                 await sns.publish({
-                    Subject: 'New Product Created',
-                    Message: `A new product was created: ${JSON.stringify(item)}`,
-                    TopicArn: topicData.TopicArn,
-                    Endpoint: "evgenij.sleepy@gmail.com"
+                    TopicArn: 'arn:aws:sns:eu-west-1:216263405757:createProductTopic',
+                    Message: `Products was created: ${itemTittles}`,
+                    Subject: 'New Products',
                 }).promise();
 
             } catch (err) {
