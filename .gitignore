@@ -1,2 +1,6 @@
 /node_modules/
 /.idea/
+/authorization-service/.env/
+/authorization-service/node_modules/
+
+/import-service/node_modules/
